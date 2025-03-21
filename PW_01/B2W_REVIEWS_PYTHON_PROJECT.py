@@ -163,6 +163,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 X = datasetToTrain['review_text']
@@ -214,3 +216,25 @@ print("\n---LOGISTIC REGRESSION---")
 print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_lr))
 print("\nClassification Report (LR):\n", classification_report(y_test, y_pred_lr))
 print("\nConfusion Matrix (LR):\n", confusion_matrix(y_test, y_pred_lr))
+
+# SUPPORT VECTOR MACHINES - SVC
+svc_clf = LinearSVC(penalty='l1')   # l1 penalty gives us better results than l2
+svc_clf.fit(X_train_tfidf, y_train)
+
+y_pred_svc = svc_clf.predict(X_test_tfidf)
+
+print("\n---SUPPORT VECTOR MACHINES - SVC---")
+print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_svc))
+print("\nClassification Report (SVC):\n", classification_report(y_test, y_pred_svc))
+print("\nConfusion Matrix (SVC):\n", confusion_matrix(y_test, y_pred_svc))
+
+# SUPPORT VECTOR MACHINES - SGD
+sgd_clf = SGDClassifier(penalty='l2')   # l2 penalty gives us better results than l1
+sgd_clf.fit(X_train_tfidf, y_train)
+
+y_pred_sgd = sgd_clf.predict(X_test_tfidf)
+
+print("\n---SUPPORT VECTOR MACHINES - SGD---")
+print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_sgd))
+print("\nClassification Report (SGD):\n", classification_report(y_test, y_pred_sgd))
+print("\nConfusion Matrix (SGD):\n", confusion_matrix(y_test, y_pred_sgd))
