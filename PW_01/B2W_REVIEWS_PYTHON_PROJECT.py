@@ -36,6 +36,7 @@ print("Dataset Filtered:\n", datasetFiltered.head())
 import enelvo
 import enelvo.normaliser
 from tqdm import tqdm
+import re
 
 normalizer = enelvo.normaliser.Normaliser()
 
@@ -45,6 +46,15 @@ from nltk.corpus import stopwords
 nltk.download('stopwords')
 stopwordsPt = set(stopwords.words('portuguese'))
 #print(stopwords.words('portuguese'))
+
+from nltk.stem import SnowballStemmer
+
+# Initialize stemmer
+stemmer = SnowballStemmer("portuguese")
+
+import spacy
+# Load Portuguese language model for lemmatization
+nlp = spacy.load("pt_core_news_sm")
 
 datasetNormalized = datasetFiltered.copy()
 #datasetNormalized = datasetNormalized.head(1000) # TEST FOR THE FIRST X ROWS
@@ -60,14 +70,42 @@ def remove_stopwords(text):
     filtered_words = [word for word in words if word not in stopwordsPt]
     return " ".join(filtered_words)
 
+# METHOD TO REMOVE SYMBOLS AND NUMBERS FROM TEXT
+def remove_symbols_and_numbers(text):
+    text = re.sub('[^a-zA-Z]', ' ',text)
+    return text.strip()
+
+# METHOD TO APPLY STEMMING
+#def apply_stemming(text):
+#    words = text.split()
+#    stemmed_words = [stemmer.stem(word) for word in words]
+#    return " ".join(stemmed_words)
+
+# METHOD TO APPLY LEMMATIZATION
+def apply_lemmatization(text):
+    doc = nlp(text)
+    lemmatized_words = [token.lemma_ for token in doc]
+    return " ".join(lemmatized_words)
+
 # PROGRESS TRACKING 
 tqdm.pandas()
+
+datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(remove_symbols_and_numbers)
 datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(remove_stopwords)
+
+#datasetNormalized_lemmatized = datasetNormalized.copy()
+datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(apply_lemmatization)
+
+#datasetNormalized_stemmed = datasetNormalized.copy()
+#datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(apply_stemming)
+
 #datasetNormalized['review_text'] = datasetNormalized['review_text'].head(10000).progress_apply(normalizer.normalise)
 
 # DEBUG
 print("Dataset filtered - review text:\n", datasetFiltered['review_text'].head())
 print("\nDataset normalized - review text:\n", datasetNormalized['review_text'].head())
+#print("\nDataset stemmed - review text:\n", datasetNormalized_stemmed['review_text'].head())
+#print("\nDataset lemmatized - review text:\n", datasetNormalized_lemmatized['review_text'].head())
 
 
 
@@ -184,7 +222,7 @@ print("Test size:", X_test.shape[0])
 
 tfidf = TfidfVectorizer(
     max_df=0.8,       # ignore terms appearing in >80% of documents
-    min_df=5,         # ignore terms appearing in <5 documents
+    min_df=5,         # ignore terms appeag)ring in <5 documents
     ngram_range=(1,2) # unigrams + bigrams
 )
 
