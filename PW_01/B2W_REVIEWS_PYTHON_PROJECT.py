@@ -54,7 +54,7 @@ stemmer = SnowballStemmer("portuguese")
 
 import spacy
 # Load Portuguese language model for lemmatization
-nlp = spacy.load("pt_core_news_sm")
+nlp = spacy.load("pt_core_news_lg")
 
 datasetNormalized = datasetFiltered.copy()
 #datasetNormalized = datasetNormalized.head(1000) # TEST FOR THE FIRST X ROWS
@@ -94,7 +94,7 @@ datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_app
 datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(remove_stopwords)
 
 #datasetNormalized_lemmatized = datasetNormalized.copy()
-datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(apply_lemmatization)
+#datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(apply_lemmatization)
 
 #datasetNormalized_stemmed = datasetNormalized.copy()
 #datasetNormalized['review_text'] = datasetNormalized['review_text'].progress_apply(apply_stemming)
@@ -187,6 +187,31 @@ datasetToTrain['recommend_to_a_friend'] = datasetToTrain['recommend_to_a_friend'
 print("Checking for NaN in X (review_text):", datasetToTrain['review_text'].isna().sum())
 print("Checking for NaN in y (recommend_to_a_friend):", datasetToTrain['recommend_to_a_friend'].isna().sum())
 
+'''
+import gensim
+
+model_path = "cc.pt.300.bin.gz"
+fasttext_model = gensim.models.fasttext.load_facebook_model(model_path)
+
+def embed_review(review, model):
+    """
+    Given a review (already preprocessed) and a Gensim embedding model,
+    return the average word embedding vector.
+    """
+    words = review.split()
+    valid_vectors = []
+    
+    for w in words:
+        if w in model.key_to_index:  # For Gensim >=4.0, vocabulary is key_to_index
+            valid_vectors.append(model[w])
+    
+    if len(valid_vectors) == 0:
+        # If no valid words, return a zero vector
+        return np.zeros(model.vector_size)
+    else:
+        return np.mean(valid_vectors, axis=0)'
+'''
+
 
 
 
@@ -220,6 +245,25 @@ X_train, X_test, y_train, y_test = train_test_split(
 print("Train size:", X_train.shape[0])
 print("Test size:", X_test.shape[0])
 
+# EMBEDDINGS
+def spacy_embed_review(review, nlp_model):
+    doc = nlp_model(review)
+    return doc.vector
+
+X_train_emb = np.array(
+    [spacy_embed_review(doc, nlp) for doc in tqdm(X_train, desc="Embedding train set")]
+)
+
+X_test_emb = np.array(
+    [spacy_embed_review(doc, nlp) for doc in tqdm(X_test, desc="Embedding test set")]
+)
+
+
+# debug
+print("Train embedding shape:", X_train_emb.shape)
+print("Test embedding shape: ", X_test_emb.shape)
+
+# TF-IDF
 tfidf = TfidfVectorizer(
     max_df=0.8,       # ignore terms appearing in >80% of documents
     min_df=5,         # ignore terms appeag)ring in <5 documents
@@ -235,9 +279,9 @@ print("Test TF-IDF shape:", X_test_tfidf.shape)
 
 # NAIVE BAYES
 nb_clf = MultinomialNB()
-nb_clf.fit(X_train_tfidf, y_train)
+nb_clf.fit(X_train_emb, y_train)
 
-y_pred_nb = nb_clf.predict(X_test_tfidf)
+y_pred_nb = nb_clf.predict(X_test_emb)
 
 print("\n---NAIVE BAYES---")
 print("Naive Bayes Accuracy:", accuracy_score(y_test, y_pred_nb))
@@ -246,9 +290,9 @@ print("\nConfusion Matrix (Naive Bayes):\n", confusion_matrix(y_test, y_pred_nb)
 
 # LOGISTIC REGRESSION
 lr_clf = LogisticRegression(max_iter=1000, random_state=42)
-lr_clf.fit(X_train_tfidf, y_train)
+lr_clf.fit(X_train_emb, y_train)
 
-y_pred_lr = lr_clf.predict(X_test_tfidf)
+y_pred_lr = lr_clf.predict(X_test_emb)
 
 print("\n---LOGISTIC REGRESSION---")
 print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_lr))
@@ -257,9 +301,9 @@ print("\nConfusion Matrix (LR):\n", confusion_matrix(y_test, y_pred_lr))
 
 # SUPPORT VECTOR MACHINES - SVC
 svc_clf = LinearSVC(penalty='l1')   # l1 penalty gives us better results than l2
-svc_clf.fit(X_train_tfidf, y_train)
+svc_clf.fit(X_train_emb, y_train)
 
-y_pred_svc = svc_clf.predict(X_test_tfidf)
+y_pred_svc = svc_clf.predict(X_test_emb)
 
 print("\n---SUPPORT VECTOR MACHINES - SVC---")
 print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_svc))
@@ -268,9 +312,9 @@ print("\nConfusion Matrix (SVC):\n", confusion_matrix(y_test, y_pred_svc))
 
 # SUPPORT VECTOR MACHINES - SGD
 sgd_clf = SGDClassifier(penalty='l2')   # l2 penalty gives us better results than l1
-sgd_clf.fit(X_train_tfidf, y_train)
+sgd_clf.fit(X_train_emb, y_train)
 
-y_pred_sgd = sgd_clf.predict(X_test_tfidf)
+y_pred_sgd = sgd_clf.predict(X_test_emb)
 
 print("\n---SUPPORT VECTOR MACHINES - SGD---")
 print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_sgd))
