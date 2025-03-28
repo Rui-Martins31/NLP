@@ -1,0 +1,9 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Ignore large embedding files (NumPy arrays)
+*.npy
