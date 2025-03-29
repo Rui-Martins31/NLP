@@ -79,12 +79,12 @@ def main():
     X_train_emb, X_test_emb, y_train, y_test = load_embeddings()
 
     # Alternatively, if you want to work with TF-IDF features, uncomment:
-    # X_train_emb, X_test_emb, y_train, y_test = load_tfidf_features()
+    X_train_emb, X_test_emb, y_train, y_test = load_tfidf_features()
 
     # -------------------------------
     # Example 1: Logistic Regression
     # -------------------------------
-    lr_clf = LogisticRegression(max_iter=1000, random_state=42)
+    lr_clf = LogisticRegression(max_iter=1000, C=1.0, random_state=42)
     lr_clf.fit(X_train_emb, y_train)
     y_pred_lr = lr_clf.predict(X_test_emb)
     print("\n--- LOGISTIC REGRESSION ---")
@@ -117,30 +117,22 @@ def main():
     # -------------------------------
     # Example 4: Random Forest (using TF-IDF features)
     # -------------------------------
-    # If you want to run Random Forest on TF-IDF features, load them instead:
-    # X_train_tfidf, X_test_tfidf, y_train, y_test = load_tfidf_features()
-    # rf_clf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
-    # rf_clf.fit(X_train_tfidf, y_train)
-    # y_pred_rf = rf_clf.predict(X_test_tfidf)
-    # print("\n--- RANDOM FOREST ---")
-    # print("Accuracy:", accuracy_score(y_test, y_pred_rf))
-    # print("Classification Report:\n", classification_report(y_test, y_pred_rf))
-    # print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_rf))
+    rf_clf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
+    rf_clf.fit(X_train_emb, y_train)
+    y_pred_rf = rf_clf.predict(X_test_emb)
+    print("\n--- RANDOM FOREST ---")
+    print("Accuracy:", accuracy_score(y_test, y_pred_rf))
+    print("Classification Report:\n", classification_report(y_test, y_pred_rf))
 
     # -------------------------------
     # Example 5: XGBoost (using TF-IDF features)
     # -------------------------------
-    # Uncomment and modify if you want to try XGBoost on TF-IDF features:
-    # X_train_tfidf, X_test_tfidf, y_train, y_test = load_tfidf_features()
-    # counter = Counter(y_train)
-    # scale_pos_weight = counter[0] / counter[1]
-    # xgb_model = XGBClassifier(n_estimators=150, max_depth=7, learning_rate=0.3, random_state=42)
-    # xgb_model.fit(X_train_tfidf, y_train)
-    # y_pred_xgb = xgb_model.predict(X_test_tfidf)
-    # print("\n--- XGBOOST ---")
-    # print("Accuracy:", accuracy_score(y_test, y_pred_xgb))
-    # print("Classification Report:\n", classification_report(y_test, y_pred_xgb))
-    # print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_xgb))
+    xgb_clf = XGBClassifier(n_estimators=100, max_depth=5, learning_rate=0.1, random_state=42)
+    xgb_clf.fit(X_train_emb, y_train)
+    y_pred_xgb = xgb_clf.predict(X_test_emb)
+    print("\n--- XGBOOST ---")
+    print("Accuracy:", accuracy_score(y_test, y_pred_xgb))
+    print("Classification Report:\n", classification_report(y_test, y_pred_xgb))
 
 
 if __name__ == "__main__":

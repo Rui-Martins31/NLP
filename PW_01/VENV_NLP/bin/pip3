@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/mnt/c/Users/ruima/Desktop/FACULDADE/4º ANO - FEUP/2º SEMESTRE/PLN - PROCESSAMENTO DE LINGUAGEM NATURAL/NLP_REPO/NLP/PW_01/VENV_NLP/bin/python3" "$0" "$@"
+'''exec' "/mnt/c/Users/ruima/Desktop/FACULDADE/4º ANO - FEUP/2º SEMESTRE/PLN - PROCESSAMENTO DE LINGUAGEM NATURAL/NLP_REPO/NLP/PW_01/VENV_NLP/bin/python" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re

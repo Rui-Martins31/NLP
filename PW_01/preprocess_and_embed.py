@@ -16,8 +16,8 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-# If using enelvo or other libraries, import them here
 #import enelvo
 #import enelvo.normaliser
 
@@ -49,6 +49,7 @@ def load_and_preprocess_data(filename="DATASET_B2W_REVIEWS.xlsx", sheetname="B2W
     datasetFiltered["recommend_to_a_friend"] = datasetFiltered["recommend_to_a_friend"].fillna(0)
 
     # REMOVE STOPWORDS, SYMBOLS, ETC
+    nlp = spacy.load("pt_core_news_lg") # Load Spacy model
     nltk.download("stopwords")
     stopwords_pt = set(stopwords.words("portuguese"))
     
@@ -60,14 +61,17 @@ def load_and_preprocess_data(filename="DATASET_B2W_REVIEWS.xlsx", sheetname="B2W
         words = text.split()
         filtered = [w for w in words if w not in stopwords_pt]
         return " ".join(filtered)
+    
+    def apply_lemmatization(text):
+        doc = nlp(text)
+        return " ".join([token.lemma_ for token in doc])
 
     tqdm.pandas()
     datasetFiltered["review_text"] = datasetFiltered["review_text"].progress_apply(remove_symbols_and_numbers)
-    datasetFiltered["review_text"] = datasetFiltered["review_text"].progress_apply(remove_stopwords)
+    #datasetFiltered["review_text"] = datasetFiltered["review_text"].progress_apply(remove_stopwords)   # The removal of stopwords can influence negatively embeddings performance
+    datasetFiltered["review_text"] = datasetFiltered["review_text"].progress_apply(apply_lemmatization)
     
-    # Convert "Yes"/"No" or "Liked"/"Not Liked" to numeric if needed
-    datasetFiltered["recommend_to_a_friend"] = datasetFiltered["recommend_to_a_friend"].progress_apply(lambda x: 1 if x == "Yes" else 0)
-    # If Liked is already 0/1, no conversion needed.
+    datasetFiltered["recommend_to_a_friend"] = datasetFiltered["recommend_to_a_friend"].progress_apply(lambda x: 1 if x == "Yes" else 0) # Conver to binary
 
     return datasetFiltered
 
@@ -81,6 +85,26 @@ def spacy_embed_review(review, nlp_model):
     """
     doc = nlp_model(review)
     return doc.vector
+
+def spacy_embed_review_weighted(review, nlp_model, tfidf_vectorizer, vocab):
+    doc = nlp_model(review)
+    
+    words = [token.text for token in doc if token.text in vocab]
+    if not words:
+        return np.zeros(nlp_model.vocab.vectors.shape[1])  # Return zero vector if no valid words
+    
+    tfidf_scores = tfidf_vectorizer.transform([review]).toarray()[0]
+    weighted_embedding = np.zeros(nlp_model.vocab.vectors.shape[1])
+
+    total_weight = 0
+    for token in doc:
+        if token.text in vocab:
+            idx = tfidf_vectorizer.vocabulary_[token.text]
+            weight = tfidf_scores[idx]
+            weighted_embedding += token.vector * weight
+            total_weight += weight
+
+    return weighted_embedding / total_weight if total_weight > 0 else weighted_embedding
 
 def embed_data(df):
     """
@@ -98,21 +122,27 @@ def embed_data(df):
         stratify=y
     )
 
-    # Load spaCy model (Portuguese or English as needed)
-    # If Portuguese: python -m spacy download pt_core_news_lg
+    # Load spaCy model
+    # Portuguese: python -m spacy download pt_core_news_lg
     # Then nlp = spacy.load("pt_core_news_lg")
-    nlp = spacy.load("pt_core_news_lg")  # or "en_core_web_lg" for English
+    nlp = spacy.load("pt_core_news_lg")
+
+    tfidf = TfidfVectorizer(max_df=0.8, min_df=5)
+    tfidf.fit(X_train)  # Fit TF-IDF on training data only
+    vocab = tfidf.vocabulary_
 
     # Embed train set
     X_train_emb = []
     for doc in tqdm(X_train, desc="Embedding train set"):
-        X_train_emb.append(spacy_embed_review(doc, nlp))
+        #X_train_emb.append(spacy_embed_review(doc, nlp))
+        X_train_emb.append(spacy_embed_review_weighted(doc, nlp, tfidf, vocab))
     X_train_emb = np.array(X_train_emb)
 
     # Embed test set
     X_test_emb = []
     for doc in tqdm(X_test, desc="Embedding test set"):
-        X_test_emb.append(spacy_embed_review(doc, nlp))
+        #X_test_emb.append(spacy_embed_review(doc, nlp))
+        X_test_emb.append(spacy_embed_review_weighted(doc, nlp, tfidf, vocab))
     X_test_emb = np.array(X_test_emb)
 
     return X_train_emb, X_test_emb, y_train, y_test

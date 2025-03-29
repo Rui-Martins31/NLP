@@ -4,7 +4,7 @@
 env/
 venv/
 ENV/
-VENV/
+VENV_NLP/
 
 # Ignore large embedding files (NumPy arrays)
 *.npy
