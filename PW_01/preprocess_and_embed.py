@@ -22,7 +22,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 #import enelvo.normaliser
 
 # ---------------------------------------------------------
-# A) Load and Preprocess
+# Load and Preprocess
 # ---------------------------------------------------------
 def load_and_preprocess_data(filename="DATASET_B2W_REVIEWS.xlsx", sheetname="B2W-Reviews01"):
     # IMPORT DATASET
@@ -76,7 +76,7 @@ def load_and_preprocess_data(filename="DATASET_B2W_REVIEWS.xlsx", sheetname="B2W
     return datasetFiltered
 
 # ---------------------------------------------------------
-# B) Embedding
+# Embedding
 # ---------------------------------------------------------
 def spacy_embed_review(review, nlp_model):
     """
@@ -145,10 +145,51 @@ def embed_data(df):
         X_test_emb.append(spacy_embed_review_weighted(doc, nlp, tfidf, vocab))
     X_test_emb = np.array(X_test_emb)
 
+    # Debug: Check embedding stats
+    print("X_train_emb shape:", X_train_emb.shape)
+    print("X_train_emb sample:", X_train_emb[:3])
+    print("X_train_emb mean:", np.mean(X_train_emb))
+    print("X_train_emb std:", np.std(X_train_emb))
+
     return X_train_emb, X_test_emb, y_train, y_test
 
+
 # ---------------------------------------------------------
-# C) Main
+# TF-IDF
+# ---------------------------------------------------------
+def load_tfidf_features(df):
+    import pandas as pd
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.model_selection import train_test_split
+
+    # Train/test split
+    X = df["review_text"]
+    y = df["recommend_to_a_friend"]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2, 
+        random_state=42, 
+        stratify=y
+    )
+
+    tfidf = TfidfVectorizer(
+        max_df=0.8,       # ignore terms appearing in >80% of documents
+        min_df=5,         # ignore terms appearing in <5 documents
+        ngram_range=(1,2) # unigrams + bigrams
+    )
+    
+    X_train_tfidf = tfidf.fit_transform(X_train)
+    X_test_tfidf = tfidf.transform(X_test)
+    
+    print("TF-IDF features:")
+    print("  X_train_tfidf shape:", X_train_tfidf.shape)
+    print("  X_test_tfidf shape: ", X_test_tfidf.shape)
+    
+    return X_train_tfidf, X_test_tfidf, y_train, y_test
+
+# ---------------------------------------------------------
+# Main
 # ---------------------------------------------------------
 def main():
     # Load and preprocess
@@ -156,6 +197,7 @@ def main():
     
     # Embed
     X_train_emb, X_test_emb, y_train, y_test = embed_data(df)
+    #X_train_emb, X_test_emb, y_train, y_test = load_tfidf_features(df)
 
     # Save to .npy files for later use
     np.save("X_train_emb.npy", X_train_emb)

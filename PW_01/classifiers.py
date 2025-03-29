@@ -19,7 +19,7 @@ from collections import Counter
 # -------------------------------
 # Helper: Load precomputed embeddings
 # -------------------------------
-def load_embeddings():
+def load_files():
     X_train = np.load("X_train_emb.npy")
     X_test = np.load("X_test_emb.npy")
     y_train = np.load("y_train.npy")
@@ -32,54 +32,10 @@ def load_embeddings():
     return X_train, X_test, y_train, y_test
 
 # -------------------------------
-# Optionally: Load and vectorize raw text using TF-IDF
-# -------------------------------
-def load_tfidf_features():
-    import pandas as pd
-    from sklearn.feature_extraction.text import TfidfVectorizer
-
-    # Load the preprocessed dataset (if saved as CSV, for example)
-    df = pd.read_excel("DATASET_B2W_REVIEWS.xlsx", sheet_name="B2W-Reviews01")
-    # The preprocessed file should have already removed unwanted columns and cleaned text.
-    # If not, you can apply your preprocessing steps here.
-    # In this example, we assume the text column is "review_text"
-    # and the label is "recommend_to_a_friend"
-    
-    # (Adjust the following if your column names differ.)
-    df["review_text"] = df["review_text"].fillna("").astype(str).str.lower().str.strip()
-    df["recommend_to_a_friend"] = df["recommend_to_a_friend"].fillna(0)
-    X = df["review_text"]
-    y = df["recommend_to_a_friend"].apply(lambda x: 1 if x == "Yes" else 0)
-    
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-
-    tfidf = TfidfVectorizer(
-        max_df=0.8,       # ignore terms appearing in >80% of documents
-        min_df=5,         # ignore terms appearing in <5 documents
-        ngram_range=(1,2) # unigrams + bigrams
-    )
-    
-    X_train_tfidf = tfidf.fit_transform(X_train)
-    X_test_tfidf = tfidf.transform(X_test)
-    
-    print("TF-IDF features:")
-    print("  X_train_tfidf shape:", X_train_tfidf.shape)
-    print("  X_test_tfidf shape: ", X_test_tfidf.shape)
-    
-    return X_train_tfidf, X_test_tfidf, y_train, y_test
-
-# -------------------------------
 # Main function: Train and evaluate classifiers
 # -------------------------------
 def main():
-    # Uncomment the following line if you want to load the embedding features:
-    X_train_emb, X_test_emb, y_train, y_test = load_embeddings()
-
-    # Alternatively, if you want to work with TF-IDF features, uncomment:
-    X_train_emb, X_test_emb, y_train, y_test = load_tfidf_features()
+    X_train_emb, X_test_emb, y_train, y_test = load_files()
 
     # -------------------------------
     # Example 1: Logistic Regression
@@ -123,6 +79,7 @@ def main():
     print("\n--- RANDOM FOREST ---")
     print("Accuracy:", accuracy_score(y_test, y_pred_rf))
     print("Classification Report:\n", classification_report(y_test, y_pred_rf))
+    print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_rf))
 
     # -------------------------------
     # Example 5: XGBoost (using TF-IDF features)
@@ -133,6 +90,7 @@ def main():
     print("\n--- XGBOOST ---")
     print("Accuracy:", accuracy_score(y_test, y_pred_xgb))
     print("Classification Report:\n", classification_report(y_test, y_pred_xgb))
+    print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_xgb))
 
 
 if __name__ == "__main__":
