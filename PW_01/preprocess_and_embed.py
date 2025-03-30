@@ -281,8 +281,8 @@ def main():
     analyze_data(df)
     
     # Embed
-    #X_train_emb, X_test_emb, y_train, y_test = embed_data(df)
-    X_train_emb, X_test_emb, y_train, y_test = load_tfidf_features(df)
+    X_train_emb, X_test_emb, y_train, y_test = embed_data(df)
+    #X_train_emb, X_test_emb, y_train, y_test = load_tfidf_features(df)
 
     # Save to .npy files for later use
     np.save("X_train_emb.npy", X_train_emb)
