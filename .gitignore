@@ -5,6 +5,15 @@ env/
 venv/
 ENV/
 VENV_NLP/
+PW_01/VENV_NLP/
+*.venv/
+venv/
 
 # Ignore large embedding files (NumPy arrays)
 *.npy
+
+# Other untracked files you may not want to commit
+*.zip
+*.pptx
+PW_01/models/
+PW_01/VENV_NLP/
