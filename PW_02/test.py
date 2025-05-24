@@ -5,6 +5,8 @@ import torch
 from datasets import Dataset
 import pandas as pd
 
+PATH_TO_SAVE = './citizenlab'
+
 
 # Get files
 X_train_strings = pd.read_csv('./X_train_string.csv')
@@ -17,8 +19,8 @@ y_train = pd.read_csv('./y_train.csv')
 NUM_TO_TEST = len(X_train_strings)#50000
 BATCH_SIZE = 32  # Process texts in smaller batches to avoid memory issues
 
-model = AutoModelForSequenceClassification.from_pretrained('./fine_tuned_sentiment_model')
-tokenizer = AutoTokenizer.from_pretrained('./fine_tuned_sentiment_model')
+model = AutoModelForSequenceClassification.from_pretrained(PATH_TO_SAVE)
+tokenizer = AutoTokenizer.from_pretrained(PATH_TO_SAVE)
 model.to('cuda' if torch.cuda.is_available() else 'cpu')
 model.eval()
 
@@ -61,7 +63,7 @@ df_results = pd.DataFrame({
     'text': texts,
     'mapped_label': predictions
 })
-df_results.to_csv('./classification_results_mapped.csv', index=False)
+df_results.to_csv(PATH_TO_SAVE + '/classification_results_mapped.csv', index=False)
 
 # Validation
 total = min(NUM_TO_TEST, len(predictions))  # Ensure we don't exceed available data

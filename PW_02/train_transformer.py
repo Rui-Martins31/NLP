@@ -11,7 +11,8 @@ print(X_test_strings.head())
 
 #-------------------------------------------------------------------------------------------------------
 
-NUM_TO_TRAIN = 25000
+NUM_TO_TRAIN = 25000#25000
+PATH_TO_SAVE = './citizenlab' #'./fine_tuned_sentiment_model'
 
 # Import libraries
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
@@ -19,10 +20,11 @@ import torch
 from datasets import Dataset
 
 # Load tokenizer and model
-model_name = "tabularisai/multilingual-sentiment-analysis"
+model_name = "citizenlab/twitter-xlm-roberta-base-sentiment-finetunned" #"tabularisai/multilingual-sentiment-analysis"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using: {device}")
 model.to(device)
 
 
@@ -72,7 +74,7 @@ val_dataset = Dataset.from_dict({
 
 # Define training arguments
 training_args = TrainingArguments(
-    output_dir='./fine_tuned_sentiment_model',
+    output_dir=PATH_TO_SAVE,
     num_train_epochs=3,
     per_device_train_batch_size=16,
     per_device_eval_batch_size=16,
@@ -96,5 +98,5 @@ trainer = Trainer(
 trainer.train()
 
 # Save the fine-tuned model and tokenizer
-model.save_pretrained('./fine_tuned_sentiment_model')
-tokenizer.save_pretrained('./fine_tuned_sentiment_model')
+model.save_pretrained(PATH_TO_SAVE)
+tokenizer.save_pretrained(PATH_TO_SAVE)
